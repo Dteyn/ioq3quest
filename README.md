@@ -1,15 +1,98 @@
 # Quake 3 Port to Oculus Quest
 
-## Building
+## Building (Windows Specific instructions)
 
 ### Prerequisites
-1. Install your copy of Quake III Arena from Steam.
-2. Android Studio with NDK version 21.1.6352462.
-3. Download the Oculus OpenXR SDK from https://developer.oculus.com/downloads/package/oculus-openxr-mobile-sdk/
-4. Extract the OpenXR folder to ./android/app/src/main/cpp/code/OpenXR/
-5. Extract the 3rdParty/khronos/openxr/OpenXR-SDK folder to ./android/app/src/main/cpp/code/OpenXR-SDK/
+#### 1. Install your copy of Quake III Arena from Steam.
+- Link: https://store.steampowered.com/app/2200/Quake_III_Arena/
 
-### Building and running the build
+#### 2. Android Studio with NDK version 21.1.6352462
+- Android Studio 4.0+ is recommended
+- Download NDK **r21b** (which corresponds to version 21.1.6352462): https://dl.google.com/android/repository/android-ndk-r21b-windows-x86_64.zip
+- In your SDK folder (`%LOCALAPPDATA%\Android\Sdk\ndk\`), create a new directory: `%LOCALAPPDATA%\Android\Sdk\ndk\21.1.6352462`
+- Unzip `android-ndk-r21b-windows-x86_64.zip`, open the `android-ndk-r21b` folder inside it, and **copy its entire contents** into `%LOCALAPPDATA%\Android\Sdk\ndk\21.1.6352462`
+
+#### 4. Download the Oculus OpenXR SDK v46
+- Go to https://developer.oculus.com/downloads/package/oculus-openxr-mobile-sdk/
+- Click the ▼ next to the version number and select **46.0**.
+- Download and unzip, then:
+
+#### 5. Extract the OpenXR folder to ./android/app/src/main/cpp/code/OpenXR/
+
+#### 6. Extract the 3rdParty/khronos/openxr/OpenXR-SDK folder to ./android/app/src/main/cpp/code/OpenXR-SDK/
+
+#### 7. Java 11 for Gradle
+- The included Gradle wrapper (6.6.1) does **not** support Java 21. To avoid “Unsupported class file major version 65” errors use Java 11 JDK:
+- Download Temurin 11: https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.27%2B6/OpenJDK11U-jdk_x64_windows_hotspot_11.0.27_6.zip
+- Extract to: `C:\Program Files\Java\jdk-11.0.27+6`
+- Edit `/android/run.bat` and change:
+```
+set JAVA_HOME=C:\Program Files\Android\Android Studio\jre\jre
+```
+to
+```
+set JAVA_HOME=C:\Program Files\Java\jdk-11.0.27+6
+```
+
+#### 8. Building the .APK
+- Navigate to the `ioq3quest` folder, right click and select `Open Git Bash Here`
+- Enter `./android/run.bat` to begin the build process
+- This will produce an **unsigned** .apk at: `android/app/build/outputs/apk/release/app-release-unsigned.apk`
+
+
+#### 9. Signing the .APK
+- To install the .apk it must be signed. Below is a batch script that can sign the .apk (you may need to edit it for paths). Drop this into your `ioq3quest` folder and run it from there to produce a signed .apk at: `android/app/build/outputs/apk/release/app-release-signed.apk`
+```batch
+@echo off
+REM === Configuration ===
+set KEYSTORE_FILE=debug.keystore
+set KEY_ALIAS=androiddebugkey
+set APK_UNSIGNED=android\app\build\outputs\apk\release\app-release-unsigned.apk
+set APK_SIGNED=android\app\build\outputs\apk\release\app-release-signed.apk
+set BUILD_TOOLS_DIR=%LOCALAPPDATA%\Android\Sdk\build-tools\29.0.2
+
+REM === Ensure unsigned APK exists ===
+if not exist "%APK_UNSIGNED%" (
+  echo ERROR: Could not find "%APK_UNSIGNED%".
+  exit /b 1
+)
+
+REM === Create debug keystore if needed ===
+if not exist "%KEYSTORE_FILE%" (
+  echo Keystore not found. Creating a debug keystore...
+  "C:\Program Files\Java\jdk-11.0.27+6\bin\keytool.exe" -genkey -v -keystore "%KEYSTORE_FILE%" -alias "%KEY_ALIAS%" -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+)
+
+REM === Check apksigner exists ===
+if not exist "C:\Users\Owner\AppData\Local\Android\Sdk\build-tools\29.0.2\lib\apksigner.jar" (
+  echo ERROR: apksigner not found in "C:\Users\Owner\AppData\Local\Android\Sdk\build-tools\29.0.2\lib\".
+  exit /b 1
+)
+
+REM === Copy then sign ===
+echo Signing APK...
+copy /y "%APK_UNSIGNED%" "%APK_SIGNED%"
+"C:\Program Files\Java\jdk-11.0.27+6\bin\java.exe" -jar "C:\Users\Owner\AppData\Local\Android\Sdk\build-tools\29.0.2\lib\apksigner.jar" sign ^
+  --ks "%KEYSTORE_FILE%" ^
+  --ks-pass pass:android ^
+  --ks-key-alias "%KEY_ALIAS%" ^
+  --key-pass pass:android ^
+  "%APK_SIGNED%"
+
+if %errorlevel% neq 0 (
+  echo ERROR: APK signing failed.
+  exit /b 1
+)
+
+echo APK successfully signed: "%APK_SIGNED%"
+pause
+```
+
+You should now have a signed .apk that you can install via SideQuest or adb.
+
+
+
+### Building and running the build (Linux and MacOS)
 The scripts assume that you installed everything in the default locations. In case you want to deviate from that, the paths are in ./android/run.(sh|bat) and in Makefile.local.
 
 #### Linux
@@ -19,10 +102,6 @@ The scripts assume that you installed everything in the default locations. In ca
 #### MacOS
 1. If you are not using the default Android Studio installation paths (~/Library/Android/sdk/ndk), update ANDROID_NDK path in Makefile.local
 2. Run ./android/run.sh
-
-#### Windows
-1. Replace \<username\> with your windows username folder as it appears in C:\Users.
-2. Open git bash and run ./android/run.bat.
 
 # Original ioq3 README:
                    ,---------------------------------------.
