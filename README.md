@@ -2,6 +2,10 @@
 
 ## Building (Windows Specific instructions)
 
+> [!WARNING]  
+> This is a **Work-In-Progress** guide and not yet finished. I will remove this message when everything is confirmed working.
+> Until then, do not consider this a proper guide.
+
 ### Prerequisites
 #### 1. Install your copy of Quake III Arena from Steam.
 - Link: https://store.steampowered.com/app/2200/Quake_III_Arena/
